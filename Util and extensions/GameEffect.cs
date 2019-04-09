@@ -1,6 +1,5 @@
 ﻿//By Dominic Brodeur-Gendron & Patrice Le Nouveau
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -232,9 +231,14 @@ public static class GameEffect {
 }
 public static class GamePhysics
 {
-	public static Vector3 BallisticVel(Transform origin,Transform target)
+    public static Vector3 BallisticVelocity(Transform origin, Transform target)
+    {
+        return BallisticVelocity(origin.position, target.position);
+    }
+
+    public static Vector3 BallisticVelocity(Vector3 origin, Vector3 target)
 	{
-		Vector3 dir = target.position - origin.position;
+		Vector3 dir = target - origin;
 		dir.y = 0;
 		
 		float dist = dir.magnitude;
@@ -243,10 +247,15 @@ public static class GamePhysics
 		
 		return vel * dir.normalized;
 	}
-	
-	public static Vector3 BallisticVel(Transform origin,Transform target, float angle)
+
+    public static Vector3 BallisticVelocity(Transform origin, Transform target, float angle)
+    {
+        return BallisticVelocity(origin.position, target.position, angle);
+    }
+
+    public static Vector3 BallisticVelocity(Vector3 origin, Vector3 target, float angle)
 	{
-		Vector3 dir = target.position - origin.position;
+		Vector3 dir = target - origin;
 		float h = dir.y;
 		dir.y = 0;
 		
@@ -259,6 +268,75 @@ public static class GamePhysics
 		float vel = Mathf.Sqrt (dist * Physics.gravity.magnitude / Mathf.Sin(2.5f * a));
 		return vel * dir.normalized ;
 	}
+
+    public class Projectile
+    {
+        float g;
+        float h;
+        Vector3 startPosition;
+        Vector3 endPosition;
+        LaunchData launchData;
+
+        public float TimeToTarget => launchData.timeToTarget;    
+
+        public Projectile(Vector3 startPosition, Vector3 endPosition, float height, float gravity)
+        {
+            g = gravity;
+            h = height;
+            this.startPosition = startPosition;
+            this.endPosition = endPosition;
+            launchData = CalculateLaunchData(startPosition, endPosition);
+        }
+
+        public Vector3 GetPositionAtTime(float currentTime)
+        {
+            return CalculatePositionAtTime(launchData, startPosition, currentTime);
+        }
+
+        public Vector3[] GetPointsOnCurve(int resolution)
+        {
+            Vector3[] positions = new Vector3[resolution];
+            for (int i = 0; i < resolution; i++)
+            {
+                float currentTime = i / (float)(resolution-1) * TimeToTarget;
+                positions[i] = GetPositionAtTime(currentTime);
+            }
+            return positions;
+        }
+
+        Vector3 CalculatePositionAtTime(LaunchData launchData, Vector3 startPosition, float currentTime)
+        {
+            Vector3 displacement = launchData.initialVelocity * currentTime + Vector3.up * g * currentTime * currentTime / 2f;
+            return startPosition + displacement;
+        }
+
+        LaunchData CalculateLaunchData(Vector3 startPosition, Vector3 endPosition)
+        {
+            float displacementY = endPosition.y - startPosition.y;
+            Vector3 displacementXZ = new Vector3(
+                endPosition.x - startPosition.x,
+                0,
+                endPosition.z - startPosition.z
+            );
+
+            float time = (Mathf.Sqrt(-2 * h / g) + Mathf.Sqrt(2 * (displacementY - h) / g));
+            Vector3 velocityY = Vector3.up * Mathf.Sqrt(-2 * g * h);
+            Vector3 velocityXZ = displacementXZ / time;
+
+            return new LaunchData(velocityXZ + velocityY * -Mathf.Sign(g), time);
+        }
+        struct LaunchData
+        {
+            public readonly Vector3 initialVelocity;
+            public readonly float timeToTarget;
+
+            public LaunchData(Vector3 initialVelocity, float timeToTarget)
+            {
+                this.initialVelocity = initialVelocity;
+                this.timeToTarget = timeToTarget;
+            }
+        }
+    }
 }
 public static class GameMath
 {
@@ -469,6 +547,52 @@ public static class GameMath
         return new Vector2(x, y);
     }
 
+    public static Vector3[] GetPointOnCurvedVector(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, int resolution)
+    {
+        Vector3[] points = new Vector3[resolution];
+        for (int i = 0; i < resolution; i++)
+        {
+            float t = (float)i / (resolution - 1);
+            points[i] = GetPointOnBezier(p1, p2, p3, p4, t);
+        }
+        return points;
+    }
+
+    public static Vector3 GetPointOnBezier(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
+    {
+        t = Mathf.Clamp01(t);
+        float oneMinusT = 1f - t;
+        return
+            oneMinusT * oneMinusT * oneMinusT * p0 +
+            3f * oneMinusT * oneMinusT * t * p1 +
+            3f * oneMinusT * t * t * p2 +
+            t * t * t * p3;
+    }
+
+    /// <summary>
+    /// Give 3 positions, this will return a list of points that will start at previous and end at next curving by current
+    /// </summary>
+    /// <param name="previous"></param>
+    /// <param name="current"></param>
+    /// <param name="next"></param>
+    /// <param name="resolution"></param>
+    /// <returns></returns>
+    public static Vector3[] GetPointOnCurvedVector(Vector3 start, Vector3 middle, Vector3 end, int resolution)
+    {
+        Vector3 dir = (middle - start);
+        Vector3 currentDestination = middle + dir;
+
+        Vector3[] points = new Vector3[resolution];
+        for (int i = 0; i < resolution; i++)
+        {
+            float t = (float) i / (resolution - 1);
+            Vector3 lerp1 = Vector3.Lerp(middle, currentDestination, t);
+            Vector3 lerp2 = Vector3.Lerp(middle, end, t);
+            points[i] = Vector3.Lerp(lerp1, lerp2, t);
+        }
+
+        return points;
+    }
 
     /// <summary>
     /// </summary>
@@ -603,7 +727,7 @@ public static class GameMath
 #region hidden functions
 namespace _GEffect
 {
-	public class FreezeFrameClass : MonoBehaviour {
+    public class FreezeFrameClass : MonoBehaviour {
 		
 		public float freezeSec;
 		
@@ -674,7 +798,7 @@ namespace _GEffect
 			if (currentTime > 0)
 			{
                 float t = currentTime / time;
-                float currentIntensity = Mathf.Lerp(0, intensity, GameMath.Sigmoid01(t));
+                float currentIntensity = Mathf.Lerp(0, intensity, GameMath.Log01(t));
 
                 if (isPerlinMode)
 				{

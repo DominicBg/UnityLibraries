@@ -78,6 +78,18 @@ public class PoolManager : MonoBehaviour
     {
         return GetObject(name, Vector3.zero, Quaternion.identity);
     }
+    public T GetObject<T>(string name)
+    {
+        return GetObject(name, Vector3.zero, Quaternion.identity).GetComponent<T>();
+    }
+    public T GetObject<T>(string name, Vector3 position, Vector3 eulerAngles)
+    {
+        return GetObject(name, position, eulerAngles).GetComponent<T>();
+    }
+    public T GetObject<T>(string name, Vector3 position)
+    {
+        return GetObject(name, position, Quaternion.identity).GetComponent<T>();
+    }
 
     public GameObject GetObjectAutoReturn(string name, Vector3 position, Vector3 eulerAngles, float timeBeforeReturn)
     {
