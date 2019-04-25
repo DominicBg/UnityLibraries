@@ -593,7 +593,33 @@ public static class GameMath
 
         return points;
     }
+	
+    #if NET_VERSION_4_5
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    #endif
+    public static Vector3 RotateAroundAxisNormalized(Vector3 direction, Vector3 axisNormalized, float angle)
+    {
+        Vector3 a_dotDA = axisNormalized * Vector3.Dot(direction, axisNormalized);
+        return a_dotDA + (direction - a_dotDA) * Mathf.Cos(angle) + Vector3.Cross(direction, axisNormalized) * Mathf.Sin(angle);
+    }
 
+    public static Vector3 RotateAroundAxis(Vector3 direction, Vector3 axis, float angle)
+    {
+        Vector3 proj = Projection(direction, axis);
+        Vector3 rej = Rejection(direction, axis);
+
+        return proj + rej * Mathf.Cos(angle) + Vector3.Cross(direction, axis) * Mathf.Sin(angle);
+    }
+
+    public static Vector3 Projection(Vector3 a, Vector3 b)
+    {
+        return (Vector3.Dot(a, b) / Vector3.Dot(b, b)) * b;
+    }
+    public static Vector3 Rejection(Vector3 a, Vector3 b)
+    {
+        return a - Projection(a, b);
+    }
+	
     /// <summary>
     /// </summary>
     /// <param name="radiusAndTheta">A Vector2 containing x = radius, y = theta</param>
