@@ -1,13 +1,12 @@
 ﻿using System.Text;
 using UnityEngine;
-using static PoolManager;
 
 public static class PoolHelper {
 
     const string constFileName = "PoolConst.cs";
     const string poolFileNAme = "PoolManager.cs";
 
-    public static void GenerateConstFile(PoolObject[] poolArray)
+    public static void GenerateConstFile(PoolManager.PoolObject[] poolArray)
     {
         string path = GetPath();
         string content = GetFileContent(poolArray);
@@ -28,7 +27,7 @@ public static class PoolHelper {
         UnityEditor.AssetDatabase.Refresh();
     }
 
-    static string GetFileContent(PoolObject[] poolArray)
+    static string GetFileContent(PoolManager.PoolObject[] poolArray)
     {
         StringBuilder fileContent = new StringBuilder();
         fileContent.Append("public static class PoolConst \n{ \n");

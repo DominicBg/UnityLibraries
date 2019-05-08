@@ -277,7 +277,7 @@ public static class GamePhysics
         Vector3 endPosition;
         LaunchData launchData;
 
-        public float TimeToTarget => launchData.timeToTarget;    
+        public float TimeToTarget { get { return launchData.timeToTarget; } }
 
         public Projectile(Vector3 startPosition, Vector3 endPosition, float height, float gravity)
         {
