@@ -2,6 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+using System.Linq;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 /* Comment m'utilisé : 
  * 		Dans l'inspecteur, remplir poolArray avec les informations pour chaque Object a pooler
@@ -168,7 +173,8 @@ public class PoolManager : MonoBehaviour
     [ContextMenu("Generate Const File")]
     public void GenerateConstFile()
     {
-        PoolHelper.GenerateConstFile(poolArray);
+        string[] poolValues = new List<PoolObject>(poolArray).Select(x => x.name).ToArray();
+        ConstFileWriter.GenerateConstFile(this, "PoolConst", poolValues);
     }
 
     [System.Serializable]
@@ -231,3 +237,20 @@ public class PoolManager : MonoBehaviour
 
 }
 
+#if UNITY_EDITOR
+[CustomEditor(typeof(PoolManager))]
+public class PoolManagerEditor : Editor
+{
+
+    public override void OnInspectorGUI()
+    {
+        DrawDefaultInspector();
+
+        PoolManager poolManager = (PoolManager)target;
+        if (GUILayout.Button("Generate Const File"))
+        {
+            poolManager.GenerateConstFile();
+        }
+    }
+}
+#endif
