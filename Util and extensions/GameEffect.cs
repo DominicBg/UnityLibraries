@@ -1,5 +1,6 @@
 ﻿//By Dominic Brodeur-Gendron & Patrice Le Nouveau
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -268,6 +269,32 @@ public static class GamePhysics
 		float vel = Mathf.Sqrt (dist * Physics.gravity.magnitude / Mathf.Sin(2.5f * a));
 		return vel * dir.normalized ;
 	}
+    public static List<Vector3> RayCastBounce(Vector3 start, Vector3 direction, int numberOfBounce)
+    {
+        List<Vector3> hitPositions = new List<Vector3>();
+        RayCastBounce(start, direction, numberOfBounce + 1, hitPositions);
+        return hitPositions;
+    }
+
+    static void RayCastBounce(Vector3 start, Vector3 direction, int numberBounceLeft, List<Vector3> hitPositions)
+    {
+        hitPositions.Add(start);
+
+        if (numberBounceLeft == 0)
+            return;
+
+        Debug.DrawRay(start, direction);
+
+        RaycastHit hitInfo;
+        if (Physics.Raycast(start, direction, out hitInfo))
+        {
+            Vector3 hitPos = hitInfo.point;
+
+            Vector3 reflection = GameMath.Reflection(direction, hitInfo.normal);
+
+            RayCastBounce(hitPos, reflection, numberBounceLeft - 1, hitPositions);
+        }
+    }
 
     public class Projectile
     {
@@ -336,6 +363,7 @@ public static class GamePhysics
                 this.timeToTarget = timeToTarget;
             }
         }
+    
     }
 }
 public static class GameMath
