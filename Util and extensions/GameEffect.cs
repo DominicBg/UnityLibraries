@@ -611,15 +611,42 @@ public static class GameMath
         return proj + rej * Mathf.Cos(angle) + Vector3.Cross(direction, axis) * Mathf.Sin(angle);
     }
 
+    /// <summary>
+    /// The projection of a on b will give a vector with only the component of a parrallel to b
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns></returns>
     public static Vector3 Projection(Vector3 a, Vector3 b)
     {
         return (Vector3.Dot(a, b) / Vector3.Dot(b, b)) * b;
     }
+
+    /// <summary>
+    /// The Rejection of a on b will give a vector with only the component of a not parallel to b
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns></returns>
     public static Vector3 Rejection(Vector3 a, Vector3 b)
     {
         return a - Projection(a, b);
     }
-	
+
+    /// <summary>
+    /// Return a vector is the reflection of a given vector a surface with a normal.
+    /// Think about throwing a ball on the wall, the reflection will give the direction where the ball will go
+    /// </summary>
+    /// <param name="vector"></param>
+    /// <param name="normal"></param>
+    /// <returns></returns>
+    public static Vector3 Reflection(Vector3 vector, Vector3 normal)
+    {
+        Vector3 projection = Projection(vector, normal);
+        Vector3 rejection = vector - projection;
+        return rejection - projection;
+    }
+
     /// <summary>
     /// </summary>
     /// <param name="radiusAndTheta">A Vector2 containing x = radius, y = theta</param>
